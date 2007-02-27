@@ -3,6 +3,7 @@
 ## Title: Friends With Benefits
 ## Notes: Syncs your friend list
 ## Author: Tekkub Stoutwrithe
+## Version: Alpha
 ## X-Website: http://code.google.com/p/tekkub-wow/
 ## X-Email: tekkub-wow@googlegroups.com
 ## X-Category: Chat/Communication
