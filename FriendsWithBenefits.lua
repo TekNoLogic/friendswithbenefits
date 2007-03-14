@@ -1,5 +1,5 @@
 
-FriendsWithBenefits = DongleStub("Dongle-Beta0"):New("FriendsWithBenefits")
+FriendsWithBenefits = DongleStub("Dongle-Beta1"):New("FriendsWithBenefits")
 local debuggers = {Tekkub = true, Beardyhead = true, Cubbyhole = true, Mishutka = true}
 if GetRealmName() == "Area 52" and debuggers[UnitName("player")] then FriendsWithBenefits:EnableDebug(1, ChatFrame5) end
 
