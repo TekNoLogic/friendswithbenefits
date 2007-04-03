@@ -83,16 +83,19 @@ function FriendsWithBenefits:ProcessNext(event)
 
 	if initadds then
 		for i=1,GetNumFriends() do
-			local name = string.lower(GetFriendInfo(i))
-			friendlist[name] = true
-			if db.factionrealm.removed[name] then
-				if not hasannounced then
-					self:Print("Updating friend list.  Please do not add or remove friends until complete.")
-					hasannounced = true
-				end
-				self:Debug(1, "RemoveFriend", name)
-				return RemoveFriend(name)
-			else db.factionrealm.friends[name] = true end
+			if not GetFriendInfo(i) then self:Print("Server returned invalid friend data")
+			else
+				local name = string.lower(GetFriendInfo(i))
+				friendlist[name] = true
+				if db.factionrealm.removed[name] then
+					if not hasannounced then
+						self:Print("Updating friend list.  Please do not add or remove friends until complete.")
+						hasannounced = true
+					end
+					self:Debug(1, "RemoveFriend", name)
+					return RemoveFriend(name)
+				else db.factionrealm.friends[name] = true end
+			end
 		end
 		initadds = nil
 	end
