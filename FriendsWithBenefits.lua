@@ -49,6 +49,7 @@ function FriendsWithBenefits:CHAT_MSG_SYSTEM(event, text)
 	local _, _, addname = string.find(text, rxadd)
 	local remname = not addname and select(3, string.find(text, rxrem))
 	if not addname and not remname and (not self.ProcessNext or text ~= ERR_FRIEND_NOT_FOUND and text ~= ERR_FRIEND_WRONG_FACTION) then return end
+	if not currfriend then return end
 
 	if text == ERR_FRIEND_NOT_FOUND then
 		if currop == "REM" then return self:Abort("'Not found' error when removing a friend") end
