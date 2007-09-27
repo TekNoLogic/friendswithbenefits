@@ -1,4 +1,4 @@
-## Interface: 20100
+## Interface: 20200
 
 ## Title: Friends With Benefits
 ## Notes: Syncs your friend list
