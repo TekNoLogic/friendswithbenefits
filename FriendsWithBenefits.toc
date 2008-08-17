@@ -1,4 +1,4 @@
-## Interface: 20400
+## Interface: 30000
 
 ## Title: Friends With Benefits
 ## Notes: Syncs your friend list
