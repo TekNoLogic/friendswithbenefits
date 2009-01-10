@@ -29,6 +29,8 @@ f:RegisterEvent("ADDON_LOADED")
 function f:ADDON_LOADED(event, addon)
 	if addon:lower() ~= "friendswithbenefits" then return end
 
+ 	LibStub("tekKonfig-AboutPanel").new(nil, "FriendsWithBenefits")
+
 	Debug("Loading DB")
 	local factionrealm = UnitFactionGroup("player").. " - "..GetRealmName()
 

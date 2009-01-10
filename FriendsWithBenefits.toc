@@ -12,4 +12,7 @@
 
 ## OptionalDeps: tekDebug, tekErr
 
+LibStub.lua
+tekKonfigAboutPanel.lua
+
 FriendsWithBenefits.lua
