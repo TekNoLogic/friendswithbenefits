@@ -77,6 +77,15 @@ RemoveFriend = function(i, ...)
 end
 
 
+local orig3 = SetFriendNotes
+SetFriendNotes = function(i, note, ...)
+	Debug("Function SetFriendNotes", i, note, ...)
+	local name = type(i) == "number" and GetFriendInfo(i) or i
+	db.notes[string.lower(name)] = note
+	return orig3(i, note, ...)
+end
+
+
 -- ERR_FRIEND_ERROR = "Unknown friend response from server."
 -- ERR_FRIEND_NOT_FOUND = "Player not found."
 -- ERR_FRIEND_WRONG_FACTION = "Friends must be part of your alliance."
@@ -115,6 +124,7 @@ function f:CHAT_MSG_SYSTEM(event, text)
 		db.removed[currfriend] = true
 		db.friends[currfriend] = nil
 		friendlist[currfriend] = nil
+		db.notes[currfriend] = nil
 	end
 
 	if self.FRIENDLIST_UPDATE then self:FRIENDLIST_UPDATE() end
@@ -155,6 +165,13 @@ function f:FRIENDLIST_UPDATE(event)
 				return AddFriend(name)
 			end
 		end
+	end
+
+	for i=1,GetNumFriends() do
+		local name, _, _, _, _, _, note = GetFriendInfo(i)
+		name = string.lower(name)
+		if db.notes[name] and db.notes[name] ~= note then SetFriendNotes(name, db.notes[name])
+		elseif note ~= "" then db.notes[name] = note end
 	end
 
 	if hasannounced then Print("Update completed.") end
