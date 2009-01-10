@@ -10,6 +10,8 @@
 
 ## SavedVariables: FriendsWithBenefitsDB
 
+## OptionalDeps: tekDebug, tekErr
+
 Dongle.lua
 
 FriendsWithBenefits.lua
