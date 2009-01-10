@@ -8,10 +8,18 @@ local initadds, friendlist = true, {}
 
 
 function FriendsWithBenefits:Initialize()
-	db = self:InitializeDB("FriendsWithBenefitsDB", {factionrealm = {friends = {}, removed = {}}})
-	if not db.factionrealm.removed[string.lower(UnitName("player"))] then
-		db.factionrealm.friends[string.lower(UnitName("player"))] = true
+	local factionrealm = UnitFactionGroup("player").. " - "..GetRealmName()
+
+	FriendsWithBenefitsDB = FriendsWithBenefitsDB or {}
+	if FriendsWithBenefitsDB.factionrealm then -- Migrate data from dongle-style DB
+		for i,v in pairs(FriendsWithBenefitsDB.factionrealm) do FriendsWithBenefitsDB[i] = v end
+		FriendsWithBenefitsDB.profileKeys, FriendsWithBenefitsDB.factionrealm = nil
 	end
+	FriendsWithBenefitsDB[factionrealm] = FriendsWithBenefitsDB[factionrealm] or {}
+	db = FriendsWithBenefitsDB[factionrealm]
+	db.friends, db.removed, db.notes = db.friends or {}, db.removed or {}, db.notes or {}
+
+	if not db.removed[string.lower(UnitName("player"))] then db.friends[string.lower(UnitName("player"))] = true end
 end
 
 function FriendsWithBenefits:Enable()
@@ -53,25 +61,25 @@ function FriendsWithBenefits:CHAT_MSG_SYSTEM(event, text)
 
 	if text == ERR_FRIEND_NOT_FOUND then
 		if currop == "REM" then return self:Abort("'Not found' error when removing a friend") end
-		db.factionrealm.removed[currfriend] = true
-		db.factionrealm.friends[currfriend] = nil
+		db.removed[currfriend] = true
+		db.friends[currfriend] = nil
 		if self.ProcessNext then self:PrintF("Cannot find player '%s' on this realm.", currfriend) end
 	elseif text == ERR_FRIEND_WRONG_FACTION then
 		if currop == "REM" then return self:Abort("'Wrong faction' error when removing a friend") end
-		db.factionrealm.removed[currfriend] = true
-		db.factionrealm.friends[currfriend] = nil
+		db.removed[currfriend] = true
+		db.friends[currfriend] = nil
 		if self.ProcessNext then self:PrintF("Player '%s' is the wrong faction.", currfriend) end
 	elseif addname then
 		if currop == "REM" then return self:Abort("'Friend added' message when removing a friend") end
 		if string.lower(addname) ~= currfriend then return self:Abort("Name mismatch while adding a friend") end
-		db.factionrealm.friends[currfriend] = true
-		db.factionrealm.removed[currfriend] = nil
+		db.friends[currfriend] = true
+		db.removed[currfriend] = nil
 		friendlist[currfriend] = true
 	elseif remname then
 		if currop == "ADD" then return self:Abort("'Friend removed' message when adding a friend") end
 		if string.lower(remname) ~= currfriend then return self:Abort("Name mismatch while removing a friend") end
-		db.factionrealm.removed[currfriend] = true
-		db.factionrealm.friends[currfriend] = nil
+		db.removed[currfriend] = true
+		db.friends[currfriend] = nil
 		friendlist[currfriend] = nil
 	end
 
@@ -86,22 +94,23 @@ function FriendsWithBenefits:ProcessNext(event)
 		for i=1,GetNumFriends() do
 			if not GetFriendInfo(i) then self:Print("Server returned invalid friend data")
 			else
-				local name = string.lower(GetFriendInfo(i))
-				friendlist[name] = true
-				if db.factionrealm.removed[name] then
+				local name, _, _, _, _, _, note = GetFriendInfo(i)
+				name = string.lower(name)
+				friendlist[name] = note or ""
+				if db.removed[name] then
 					if not hasannounced then
 						self:Print("Updating friend list.  Please do not add or remove friends until complete.")
 						hasannounced = true
 					end
 					self:Debug(1, "RemoveFriend", name)
 					return RemoveFriend(name)
-				else db.factionrealm.friends[name] = true end
+				else db.friends[name] = true end
 			end
 		end
 		initadds = nil
 	end
 
-	for name in pairs(db.factionrealm.friends) do
+	for name in pairs(db.friends) do
 		if not friendlist[name] and string.lower(UnitName("player")) ~= name then
 			if not hasannounced then
 				self:Print("Updating friend list.  Please do not add or remove friends until complete.")
