@@ -138,7 +138,9 @@ function f:FRIENDLIST_UPDATE(event)
 
 	if initadds then
 		for i=1,GetNumFriends() do
-			if not GetFriendInfo(i) then Print("Server returned invalid friend data")
+			if not GetFriendInfo(i) then
+				Print("Server returned invalid friend data")
+				return
 			else
 				local name, _, _, _, _, _, note = GetFriendInfo(i)
 				name = string.lower(name)
@@ -171,7 +173,9 @@ function f:FRIENDLIST_UPDATE(event)
 
 	for i=1,GetNumFriends() do
 		local name, _, _, _, _, _, note = GetFriendInfo(i)
-		if not name then Print("Server returned invalid friend data")
+		if not name then
+			Print("Server returned invalid friend data")
+			return
 		else
 			name = string.lower(name)
 			if db.notes[name] and db.notes[name] ~= note then SetFriendNotes(name, db.notes[name])
