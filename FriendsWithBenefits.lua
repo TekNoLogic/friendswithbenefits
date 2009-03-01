@@ -171,9 +171,12 @@ function f:FRIENDLIST_UPDATE(event)
 
 	for i=1,GetNumFriends() do
 		local name, _, _, _, _, _, note = GetFriendInfo(i)
-		name = string.lower(name)
-		if db.notes[name] and db.notes[name] ~= note then SetFriendNotes(name, db.notes[name])
-		elseif note ~= "" then db.notes[name] = note end
+		if not name then Print("Server returned invalid friend data")
+		else
+			name = string.lower(name)
+			if db.notes[name] and db.notes[name] ~= note then SetFriendNotes(name, db.notes[name])
+			elseif note ~= "" then db.notes[name] = note end
+		end
 	end
 
 	if hasannounced then Print("Update completed.") end
