@@ -63,19 +63,19 @@ end
 
 
 local orig1 = AddFriend
-AddFriend = function(name, ...)
-	Debug("Function AddFriend", name, ...)
-	currop, currfriend = "ADD", string.lower(name)
-	return orig1(name, ...)
+AddFriend = function(name, ignore, ...)
+	Debug("Function AddFriend", name, ignore, ...)
+	if not ignore then currop, currfriend = "ADD", string.lower(name) end
+	return orig1(name, ignore, ...)
 end
 
 
 local orig2 = RemoveFriend
-RemoveFriend = function(i, ...)
-	Debug("Function RemoveFriend", i, ...)
+RemoveFriend = function(i, ignore, ...)
 	local name = type(i) == "number" and GetFriendInfo(i) or i
-	currop, currfriend = "REM", string.lower(name)
-	return orig2(i, ...)
+	Debug("Function RemoveFriend", name, i, ignore, ...)
+	if not ignore then currop, currfriend = "REM", string.lower(name) end
+	return orig2(i, ignore, ...)
 end
 
 
