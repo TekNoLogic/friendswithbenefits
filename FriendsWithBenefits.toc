@@ -12,6 +12,9 @@
 
 ## OptionalDeps: tekDebug, tekErr
 
+## LoadManagers: AddonLoader
+## X-LoadOn-Always: delayed
+
 LibStub.lua
 tekKonfigAboutPanel.lua
 
