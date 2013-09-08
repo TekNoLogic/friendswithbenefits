@@ -56,6 +56,57 @@ SetFriendNotes = function(i, note, ...)
 end
 
 
+local function FinalizeAdd(name)
+	ns.Debug("Processing chat friend add", name, currop, currfriend)
+
+	if not currop then
+		return ns.Abort("Unexpected friend add.")
+	end
+
+	if currop == "REM" then
+		return ns.Abort("Unexpected chat response from server.")
+	end
+
+	if string.lower(name) ~= currfriend then
+		return ns.Abort("Name mismatch while adding a friend.")
+	end
+
+	ns.Debug("Friend added", currfriend)
+	db.friends[currfriend] = true
+	db.removed[currfriend] = nil
+	friendlist[currfriend] = true
+	currop, currfriend = nil
+
+	if ns.FRIENDLIST_UPDATE then ns.FRIENDLIST_UPDATE() end
+end
+
+
+local function FinalizeRemove(name)
+	ns.Debug("Processing chat friend remove", name, currop, currfriend)
+
+	if not currop then
+		return ns.Abort("Unexpected friend removal.")
+	end
+
+	if currop == "ADD" then
+		return ns.Abort("Unexpected chat response from server.")
+	end
+
+	if string.lower(name) ~= currfriend then
+		return ns.Abort("Name mismatch while removing a friend.")
+	end
+
+	ns.Debug("Friend removed", currfriend)
+	db.removed[currfriend] = true
+	db.friends[currfriend] = nil
+	friendlist[currfriend] = nil
+	db.notes[currfriend] = nil
+	currop, currfriend = nil
+
+	if ns.FRIENDLIST_UPDATE then ns.FRIENDLIST_UPDATE() end
+end
+
+
 local function HandleError(err)
 	ns.Debug("Processing chat error", err, currop, currfriend)
 
@@ -89,30 +140,13 @@ local chat_errors = {
 function ns.CHAT_MSG_SYSTEM(event, text)
 	if chat_errors[text] then return HandleError(text) end
 
+	ns.Debug("Processing chat message", text, currop, currfriend)
+
 	local _, _, addname = string.find(text, rxadd)
-	local remname = not addname and select(3, string.find(text, rxrem))
-	if not addname and not remname then return end
-	if not currfriend then return end
-	ns.Debug("Processing chat message", text, addname, remname, currfriend)
+	if addname then return FinalizeAdd(addname) end
 
-	if addname then
-		if currop == "REM" then return ns.Abort("'Friend added' message when removing a friend.") end
-		if string.lower(addname) ~= currfriend then return ns.Abort("Name mismatch while adding a friend.") end
-		ns.Debug("Friend added", currfriend)
-		db.friends[currfriend] = true
-		db.removed[currfriend] = nil
-		friendlist[currfriend] = true
-	elseif remname then
-		if currop == "ADD" then return ns.Abort("'Friend removed' message when adding a friend.") end
-		if string.lower(remname) ~= currfriend then return ns.Abort("Name mismatch while removing a friend.") end
-		ns.Debug("Friend removed", currfriend)
-		db.removed[currfriend] = true
-		db.friends[currfriend] = nil
-		friendlist[currfriend] = nil
-		db.notes[currfriend] = nil
-	end
-
-	if ns.FRIENDLIST_UPDATE then ns.FRIENDLIST_UPDATE() end
+	local _, _, remname = string.find(text, rxrem)
+	if remname then return FinalizeRemove(remname) end
 end
 
 
