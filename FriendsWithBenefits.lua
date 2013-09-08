@@ -1,20 +1,13 @@
 
+local myname, ns = ...
+
+
 ----------------------
 --      Locals      --
 ----------------------
 
 local db, currop, currfriend, hasannounced
 local initadds, friendlist = true, {}
-
-
-------------------------------
---      Util Functions      --
-------------------------------
-
-local function Print(...) print("|cFF33FF99Friends With Benefits|r:", ...) end
-
-local debugf = tekDebug and tekDebug:GetFrame("FriendsWithBenefits")
-local function Debug(...) if debugf then debugf:AddMessage(string.join(", ", tostringall(...))) end end
 
 
 -----------------------------
@@ -31,7 +24,7 @@ function f:ADDON_LOADED(event, addon)
 
  	LibStub("tekKonfig-AboutPanel").new(nil, "FriendsWithBenefits")
 
-	Debug("Loading DB")
+	ns.Debug("Loading DB")
 	local factionrealm = UnitFactionGroup("player").. " - "..GetRealmName()
 
 	FriendsWithBenefitsDB = FriendsWithBenefitsDB or {}
@@ -64,7 +57,7 @@ end
 
 local orig1 = AddFriend
 AddFriend = function(name, ignore, ...)
-	Debug("Function AddFriend", name, ignore, ...)
+	ns.Debug("Function AddFriend", name, ignore, ...)
 	if not ignore then currop, currfriend = "ADD", string.lower(name) end
 	return orig1(name, ignore, ...)
 end
@@ -73,7 +66,7 @@ end
 local orig2 = RemoveFriend
 RemoveFriend = function(i, ignore, ...)
 	local name = type(i) == "number" and GetFriendInfo(i) or i
-	Debug("Function RemoveFriend", name, i, ignore, ...)
+	ns.Debug("Function RemoveFriend", name, i, ignore, ...)
 	if not ignore then currop, currfriend = "REM", string.lower(name) end
 	return orig2(i, ignore, ...)
 end
@@ -81,7 +74,7 @@ end
 
 local orig3 = SetFriendNotes
 SetFriendNotes = function(i, note, ...)
-	Debug("Function SetFriendNotes", i, note, ...)
+	ns.Debug("Function SetFriendNotes", i, note, ...)
 	local name = type(i) == "number" and GetFriendInfo(i) or i
 	db.notes[string.lower(name)] = note
 	return orig3(i, note, ...)
@@ -100,29 +93,29 @@ function f:CHAT_MSG_SYSTEM(event, text)
 	local remname = not addname and select(3, string.find(text, rxrem))
 	if not addname and not remname and (not self.FRIENDLIST_UPDATE or text ~= ERR_FRIEND_NOT_FOUND and text ~= ERR_FRIEND_WRONG_FACTION) then return end
 	if not currfriend then return end
-	Debug("Processing chat message", text, addname, remname, currfriend)
+	ns.Debug("Processing chat message", text, addname, remname, currfriend)
 
 	if text == ERR_FRIEND_NOT_FOUND then
 		if currop == "REM" then return self:Abort("'Not found' error when removing a friend.") end
 		db.removed[currfriend] = true
 		db.friends[currfriend] = nil
-		if self.FRIENDLIST_UPDATE then Print(string.format("Cannot find player %q on this realm.", currfriend)) end
+		if self.FRIENDLIST_UPDATE then ns.Printf("Cannot find player %q on this realm.", currfriend) end
 	elseif text == ERR_FRIEND_WRONG_FACTION then
 		if currop == "REM" then return self:Abort("'Wrong faction' error when removing a friend.") end
 		db.removed[currfriend] = true
 		db.friends[currfriend] = nil
-		if self.FRIENDLIST_UPDATE then Print(string.format("Player %q is the wrong faction.", currfriend)) end
+		if self.FRIENDLIST_UPDATE then ns.Printf("Player %q is the wrong faction.", currfriend) end
 	elseif addname then
 		if currop == "REM" then return self:Abort("'Friend added' message when removing a friend.") end
 		if string.lower(addname) ~= currfriend then return self:Abort("Name mismatch while adding a friend.") end
-		Debug("Friend added", currfriend)
+		ns.Debug("Friend added", currfriend)
 		db.friends[currfriend] = true
 		db.removed[currfriend] = nil
 		friendlist[currfriend] = true
 	elseif remname then
 		if currop == "ADD" then return self:Abort("'Friend removed' message when adding a friend.") end
 		if string.lower(remname) ~= currfriend then return self:Abort("Name mismatch while removing a friend.") end
-		Debug("Friend removed", currfriend)
+		ns.Debug("Friend removed", currfriend)
 		db.removed[currfriend] = true
 		db.friends[currfriend] = nil
 		friendlist[currfriend] = nil
@@ -139,7 +132,7 @@ function f:FRIENDLIST_UPDATE(event)
 	if initadds then
 		for i=1,GetNumFriends() do
 			if not GetFriendInfo(i) then
-				Print("Server returned invalid friend data")
+				ns.Print("Server returned invalid friend data")
 				return
 			else
 				local name, _, _, _, _, _, note = GetFriendInfo(i)
@@ -147,10 +140,10 @@ function f:FRIENDLIST_UPDATE(event)
 				friendlist[name] = note or ""
 				if db.removed[name] then
 					if not hasannounced then
-						Print("Updating friend list.  Please do not add or remove friends until complete.")
+						ns.Print("Updating friend list.  Please do not add or remove friends until complete.")
 						hasannounced = true
 					end
-					Debug("RemoveFriend", name)
+					ns.Debug("RemoveFriend", name)
 					return RemoveFriend(name)
 				else db.friends[name] = true end
 			end
@@ -161,11 +154,11 @@ function f:FRIENDLIST_UPDATE(event)
 	for name in pairs(db.friends) do
 		if not friendlist[name] and string.lower(UnitName("player")) ~= name then
 			if not hasannounced then
-				Print("Updating friend list.  Please do not add or remove friends until complete.")
+				ns.Print("Updating friend list.  Please do not add or remove friends until complete.")
 				hasannounced = true
 			end
 			if name ~= string.lower(UnitName("player")) then
-				Debug("AddFriend", name)
+				ns.Debug("AddFriend", name)
 				return AddFriend(name)
 			end
 		end
@@ -174,7 +167,7 @@ function f:FRIENDLIST_UPDATE(event)
 	for i=1,GetNumFriends() do
 		local name, _, _, _, _, _, note = GetFriendInfo(i)
 		if not name then
-			Print("Server returned invalid friend data")
+			ns.Print("Server returned invalid friend data")
 			return
 		else
 			name = string.lower(name)
@@ -183,8 +176,8 @@ function f:FRIENDLIST_UPDATE(event)
 		end
 	end
 
-	if hasannounced then Print("Update completed.") end
-	Debug("Cleaning up")
+	if hasannounced then ns.Print("Update completed.") end
+	ns.Debug("Cleaning up")
 	self:UnregisterEvent("FRIENDLIST_UPDATE")
 	self.FRIENDLIST_UPDATE, self.Cleanup = nil
 end
@@ -194,5 +187,5 @@ function f:Abort(msg)
 	self:UnregisterAllEvents()
 	self.FRIENDLIST_UPDATE, self.Cleanup, self.CHAT_MSG_SYSTEM, self.Abort = nil
 	self:SetScript("OnEvent", nil)
-	Print(msg, "Disabling for the rest of this session.")
+	ns.Print(msg, "Disabling for the rest of this session.")
 end
