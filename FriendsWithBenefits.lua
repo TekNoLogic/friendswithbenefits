@@ -2,7 +2,7 @@
 local myname, ns = ...
 
 
-local db, currop, currfriend, hasannounced
+local db, currop, currfriend
 local friendlist = {}
 
 
@@ -56,45 +56,19 @@ SetFriendNotes = function(i, note, ...)
 end
 
 
-local function FinalizeAdd(name)
-	ns.Debug("Processing chat friend add", name, currop, currfriend)
-
-	if not currop then
-		return ns.Abort("Unexpected friend add.")
-	end
-
-	if currop == "REM" then
-		return ns.Abort("Unexpected chat response from server.")
-	end
-
-	if string.lower(name) ~= currfriend then
-		return ns.Abort("Name mismatch while adding a friend.")
-	end
+local function FinalizeAdd()
+	if not GetFriendInfo(currfriend) then return end
 
 	ns.Debug("Friend added", currfriend)
 	db.friends[currfriend] = true
 	db.removed[currfriend] = nil
 	friendlist[currfriend] = true
 	currop, currfriend = nil
-
-	if ns.FRIENDLIST_UPDATE then ns.FRIENDLIST_UPDATE() end
 end
 
 
-local function FinalizeRemove(name)
-	ns.Debug("Processing chat friend remove", name, currop, currfriend)
-
-	if not currop then
-		return ns.Abort("Unexpected friend removal.")
-	end
-
-	if currop == "ADD" then
-		return ns.Abort("Unexpected chat response from server.")
-	end
-
-	if string.lower(name) ~= currfriend then
-		return ns.Abort("Name mismatch while removing a friend.")
-	end
+local function FinalizeRemove()
+	if GetFriendInfo(currfriend) then return end
 
 	ns.Debug("Friend removed", currfriend)
 	db.removed[currfriend] = true
@@ -102,8 +76,6 @@ local function FinalizeRemove(name)
 	friendlist[currfriend] = nil
 	db.notes[currfriend] = nil
 	currop, currfriend = nil
-
-	if ns.FRIENDLIST_UPDATE then ns.FRIENDLIST_UPDATE() end
 end
 
 
@@ -130,8 +102,6 @@ local function HandleError(err)
 end
 
 
-local rxadd = string.gsub(ERR_FRIEND_ADDED_S, "%%s", "(.+)")   -- ERR_FRIEND_ADDED_S = "%s added to friends."
-local rxrem = string.gsub(ERR_FRIEND_REMOVED_S, "%%s", "(.+)") -- ERR_FRIEND_REMOVED_S = "%s removed from friends list."
 local chat_errors = {
 	[ERR_FRIEND_ERROR] = true, -- "Unknown friend response from server."
 	[ERR_FRIEND_NOT_FOUND] = true, -- "Player not found."
@@ -139,22 +109,33 @@ local chat_errors = {
 }
 function ns.CHAT_MSG_SYSTEM(event, text)
 	if chat_errors[text] then return HandleError(text) end
-
-	ns.Debug("Processing chat message", text, currop, currfriend)
-
-	local _, _, addname = string.find(text, rxadd)
-	if addname then return FinalizeAdd(addname) end
-
-	local _, _, remname = string.find(text, rxrem)
-	if remname then return FinalizeRemove(remname) end
 end
 
 
 function ns.FRIENDLIST_UPDATE(event)
+	if currop == "ADD" then return FinalizeAdd()
+	elseif currop == "REM" then return FinalizeRemove() end
+
+	if ns.LoginSync then ns.LoginSync() end
+end
+
+
+local hasannounced
+local function AnnounceOnce()
+	ns.Print("Updating friend list.  Please do not add or remove friends until complete.")
+	hasannounced = true
+	AnnounceOnce = function() end
+end
+
+
+function ns.LoginSync()
+	if not hasannounced then ns.Debug("First sync FRIENDLIST_UPDATE") end
+
 	if ns.LoginSyncRemote then
 		local name = ns.LoginSyncRemote()
 		if name then
-			ns.Debug("Removing friend", name)
+			AnnounceOnce()
+			ns.Debug("Removing friend due to sync", name)
 			return RemoveFriend(name)
 		end
 	end
@@ -162,7 +143,8 @@ function ns.FRIENDLIST_UPDATE(event)
 	if ns.LoginSyncLocal then
 		local name = ns.LoginSyncLocal()
 		if name then
-			ns.Debug("Adding friend", name)
+			AnnounceOnce()
+			ns.Debug("Adding friend due to sync", name)
 			return AddFriend(name)
 		end
 	end
@@ -170,17 +152,9 @@ function ns.FRIENDLIST_UPDATE(event)
 	if hasannounced then ns.Print("Update completed.") end
 	ns.Debug("Login sync complete")
 
-	ns.FRIENDLIST_UPDATE = function(event, ...)
-		ns.Debug(event, ...)
-	end
+	ns.LoginSync = nil
 end
 
-
-local function AnnounceOnce()
-	ns.Print("Updating friend list.  Please do not add or remove friends until complete.")
-	hasannounced = true
-	AnnounceOnce = function() end
-end
 
 function ns.LoginSyncRemote()
 	for i=1,GetNumFriends() do
@@ -191,7 +165,6 @@ function ns.LoginSyncRemote()
 			name = string.lower(name)
 			friendlist[name] = note or ""
 			if db.removed[name] then
-				AnnounceOnce()
 				return name
 			else db.friends[name] = true end
 		end
@@ -203,7 +176,6 @@ end
 function ns.LoginSyncLocal()
 	for name in pairs(db.friends) do
 		if not friendlist[name] and string.lower(UnitName("player")) ~= name then
-			AnnounceOnce()
 			return name
 		end
 	end
@@ -228,7 +200,7 @@ end
 
 function ns.Abort(msg)
 	ns.UnregisterAllEvents()
-	ns.LoginSyncRemote, ns.LoginSyncLocal = nil
+	ns.LoginSync, ns.LoginSyncRemote, ns.LoginSyncLocal = nil
 	ns.FRIENDLIST_UPDATE, ns.CHAT_MSG_SYSTEM, ns.Abort = nil
 	ns.Print(msg, "Disabling for the rest of this session.")
 end
