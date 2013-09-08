@@ -19,6 +19,7 @@ LibStub.lua
 tekKonfigAboutPanel.lua
 
 externals\debug.lua
+externals\events.lua
 externals\print.lua
 
 FriendsWithBenefits.lua
