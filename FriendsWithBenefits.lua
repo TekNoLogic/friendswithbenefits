@@ -7,8 +7,6 @@ local initadds, friendlist = true, {}
 
 
 function ns.OnLoad()
- 	LibStub("tekKonfig-AboutPanel").new(nil, "FriendsWithBenefits")
-
 	ns.Debug("Loading DB")
 	local factionrealm = UnitFactionGroup("player").. " - "..GetRealmName()
 

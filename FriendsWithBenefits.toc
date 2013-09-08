@@ -21,5 +21,6 @@ tekKonfigAboutPanel.lua
 externals\debug.lua
 externals\events.lua
 externals\print.lua
+externals\ui-about.lua
 
 FriendsWithBenefits.lua
