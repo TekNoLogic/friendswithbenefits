@@ -56,31 +56,46 @@ SetFriendNotes = function(i, note, ...)
 end
 
 
--- ERR_FRIEND_ERROR = "Unknown friend response from server."
--- ERR_FRIEND_NOT_FOUND = "Player not found."
--- ERR_FRIEND_WRONG_FACTION = "Friends must be part of your alliance."
+local function HandleError(err)
+	ns.Debug("Processing chat error", err, currop, currfriend)
+
+	if text == ERR_FRIEND_ERROR then return ns.Abort("An error has occured.") end
+	if currop == 'REM' then return ns.Abort("Unexpected server response.") end
+
+	if err == ERR_FRIEND_NOT_FOUND then
+		db.removed[currfriend] = true
+		db.friends[currfriend] = nil
+		if ns.FRIENDLIST_UPDATE then
+			ns.Printf("Cannot find player %q on this realm.", currfriend)
+		end
+
+	elseif err == ERR_FRIEND_WRONG_FACTION then
+		db.removed[currfriend] = true
+		db.friends[currfriend] = nil
+		if ns.FRIENDLIST_UPDATE then
+			ns.Printf("Player %q is the wrong faction.", currfriend)
+		end
+	end
+end
+
+
 local rxadd = string.gsub(ERR_FRIEND_ADDED_S, "%%s", "(.+)")   -- ERR_FRIEND_ADDED_S = "%s added to friends."
 local rxrem = string.gsub(ERR_FRIEND_REMOVED_S, "%%s", "(.+)") -- ERR_FRIEND_REMOVED_S = "%s removed from friends list."
+local chat_errors = {
+	[ERR_FRIEND_ERROR] = true, -- "Unknown friend response from server."
+	[ERR_FRIEND_NOT_FOUND] = true, -- "Player not found."
+	[ERR_FRIEND_WRONG_FACTION] = true, -- "Friends must be part of your alliance."
+}
 function ns.CHAT_MSG_SYSTEM(event, text)
-	if text == ERR_FRIEND_ERROR then return ns.Abort("An error has occured.") end
+	if chat_errors[text] then return HandleError(text) end
 
 	local _, _, addname = string.find(text, rxadd)
 	local remname = not addname and select(3, string.find(text, rxrem))
-	if not addname and not remname and (not ns.FRIENDLIST_UPDATE or text ~= ERR_FRIEND_NOT_FOUND and text ~= ERR_FRIEND_WRONG_FACTION) then return end
+	if not addname and not remname then return end
 	if not currfriend then return end
 	ns.Debug("Processing chat message", text, addname, remname, currfriend)
 
-	if text == ERR_FRIEND_NOT_FOUND then
-		if currop == "REM" then return ns.Abort("'Not found' error when removing a friend.") end
-		db.removed[currfriend] = true
-		db.friends[currfriend] = nil
-		if ns.FRIENDLIST_UPDATE then ns.Printf("Cannot find player %q on this realm.", currfriend) end
-	elseif text == ERR_FRIEND_WRONG_FACTION then
-		if currop == "REM" then return ns.Abort("'Wrong faction' error when removing a friend.") end
-		db.removed[currfriend] = true
-		db.friends[currfriend] = nil
-		if ns.FRIENDLIST_UPDATE then ns.Printf("Player %q is the wrong faction.", currfriend) end
-	elseif addname then
+	if addname then
 		if currop == "REM" then return ns.Abort("'Friend added' message when removing a friend.") end
 		if string.lower(addname) ~= currfriend then return ns.Abort("Name mismatch while adding a friend.") end
 		ns.Debug("Friend added", currfriend)
