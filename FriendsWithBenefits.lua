@@ -3,7 +3,7 @@ local myname, ns = ...
 
 
 local db, currop, currfriend, hasannounced
-local initadds, friendlist = true, {}
+local friendlist = {}
 
 
 function ns.OnLoad()
@@ -104,57 +104,66 @@ end
 function ns.FRIENDLIST_UPDATE(event)
 	if event then ns.UnregisterEvent("FRIENDLIST_UPDATE") end
 
-	if initadds then
-		for i=1,GetNumFriends() do
-			if not GetFriendInfo(i) then
-				ns.Print("Server returned invalid friend data")
-				return
-			else
-				local name, _, _, _, _, _, note = GetFriendInfo(i)
-				name = string.lower(name)
-				friendlist[name] = note or ""
-				if db.removed[name] then
-					if not hasannounced then
-						ns.Print("Updating friend list.  Please do not add or remove friends until complete.")
-						hasannounced = true
-					end
-					ns.Debug("RemoveFriend", name)
-					return RemoveFriend(name)
-				else db.friends[name] = true end
-			end
-		end
-		initadds = nil
-	end
-
-	for name in pairs(db.friends) do
-		if not friendlist[name] and string.lower(UnitName("player")) ~= name then
-			if not hasannounced then
-				ns.Print("Updating friend list.  Please do not add or remove friends until complete.")
-				hasannounced = true
-			end
-			if name ~= string.lower(UnitName("player")) then
-				ns.Debug("AddFriend", name)
-				return AddFriend(name)
-			end
-		end
-	end
-
-	for i=1,GetNumFriends() do
-		local name, _, _, _, _, _, note = GetFriendInfo(i)
-		if not name then
-			ns.Print("Server returned invalid friend data")
-			return
-		else
-			name = string.lower(name)
-			if db.notes[name] and db.notes[name] ~= note then SetFriendNotes(name, db.notes[name])
-			elseif note ~= "" then db.notes[name] = note end
-		end
-	end
+  if ns.LoginSyncRemote then ns.LoginSyncRemote() end
+  if ns.LoginSyncLocal then ns.LoginSyncLocal() end
 
 	if hasannounced then ns.Print("Update completed.") end
 	ns.Debug("Cleaning up")
 	ns.UnregisterEvent("FRIENDLIST_UPDATE")
 	ns.FRIENDLIST_UPDATE = nil
+end
+
+
+function ns.LoginSyncRemote()
+  for i=1,GetNumFriends() do
+    if not GetFriendInfo(i) then
+      ns.Print("Server returned invalid friend data")
+      return
+    else
+      local name, _, _, _, _, _, note = GetFriendInfo(i)
+      name = string.lower(name)
+      friendlist[name] = note or ""
+      if db.removed[name] then
+        if not hasannounced then
+          ns.Print("Updating friend list.  Please do not add or remove friends until complete.")
+          hasannounced = true
+        end
+        ns.Debug("RemoveFriend", name)
+        return RemoveFriend(name)
+      else db.friends[name] = true end
+    end
+  end
+  ns.LoginSyncRemote = nil
+end
+
+
+function ns.LoginSyncLocal()
+  for name in pairs(db.friends) do
+    if not friendlist[name] and string.lower(UnitName("player")) ~= name then
+      if not hasannounced then
+        ns.Print("Updating friend list.  Please do not add or remove friends until complete.")
+        hasannounced = true
+      end
+      if name ~= string.lower(UnitName("player")) then
+        ns.Debug("AddFriend", name)
+        return AddFriend(name)
+      end
+    end
+  end
+
+  for i=1,GetNumFriends() do
+    local name, _, _, _, _, _, note = GetFriendInfo(i)
+    if not name then
+      ns.Print("Server returned invalid friend data")
+      return
+    else
+      name = string.lower(name)
+      if db.notes[name] and db.notes[name] ~= note then SetFriendNotes(name, db.notes[name])
+      elseif note ~= "" then db.notes[name] = note end
+    end
+  end
+
+  ns.LoginSyncLocal = nil
 end
 
 
