@@ -30,29 +30,29 @@ function ns.OnLogin()
 end
 
 
-local orig1 = AddFriend
+local origAddFriend = AddFriend
 AddFriend = function(name, ignore, ...)
 	ns.Debug("Function AddFriend", name, ignore, ...)
 	if not ignore then currop, currfriend = "ADD", string.lower(name) end
-	return orig1(name, ignore, ...)
+	return origAddFriend(name, ignore, ...)
 end
 
 
-local orig2 = RemoveFriend
+local origRemoveFriend = RemoveFriend
 RemoveFriend = function(i, ignore, ...)
 	local name = type(i) == "number" and GetFriendInfo(i) or i
 	ns.Debug("Function RemoveFriend", name, i, ignore, ...)
 	if not ignore then currop, currfriend = "REM", string.lower(name) end
-	return orig2(i, ignore, ...)
+	return origRemoveFriend(i, ignore, ...)
 end
 
 
-local orig3 = SetFriendNotes
+local origSetFriendNotes = SetFriendNotes
 SetFriendNotes = function(i, note, ...)
 	ns.Debug("Function SetFriendNotes", i, note, ...)
 	local name = type(i) == "number" and GetFriendInfo(i) or i
 	db.notes[string.lower(name)] = note
-	return orig3(i, note, ...)
+	return origSetFriendNotes(i, note, ...)
 end
 
 
