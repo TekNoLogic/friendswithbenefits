@@ -11,10 +11,6 @@ function ns.OnLoad()
 	local factionrealm = UnitFactionGroup("player").. " - "..GetRealmName()
 
 	FriendsWithBenefitsDB = FriendsWithBenefitsDB or {}
-	if FriendsWithBenefitsDB.factionrealm then -- Migrate data from dongle-style DB
-		for i,v in pairs(FriendsWithBenefitsDB.factionrealm) do FriendsWithBenefitsDB[i] = v end
-		FriendsWithBenefitsDB.profileKeys, FriendsWithBenefitsDB.factionrealm = nil
-	end
 	FriendsWithBenefitsDB[factionrealm] = FriendsWithBenefitsDB[factionrealm] or {}
 	db = FriendsWithBenefitsDB[factionrealm]
 	db.friends, db.removed, db.notes = db.friends or {}, db.removed or {}, db.notes or {}
