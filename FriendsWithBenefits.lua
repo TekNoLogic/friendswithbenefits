@@ -31,19 +31,19 @@ end
 
 
 local origAddFriend = AddFriend
-AddFriend = function(name, ignore, ...)
-	ns.Debug("Function AddFriend", name, ignore, ...)
-	if not ignore then currop, currfriend = "ADD", string.lower(name) end
-	return origAddFriend(name, ignore, ...)
+AddFriend = function(name, ...)
+	ns.Debug("Function AddFriend", name, ...)
+	currop, currfriend = "ADD", string.lower(name)
+	return origAddFriend(name, ...)
 end
 
 
 local origRemoveFriend = RemoveFriend
-RemoveFriend = function(i, ignore, ...)
+RemoveFriend = function(i, ...)
 	local name = type(i) == "number" and GetFriendInfo(i) or i
-	ns.Debug("Function RemoveFriend", name, i, ignore, ...)
-	if not ignore then currop, currfriend = "REM", string.lower(name) end
-	return origRemoveFriend(i, ignore, ...)
+	ns.Debug("Function RemoveFriend", name, i, ...)
+	currop, currfriend = "REM", string.lower(name)
+	return origRemoveFriend(i, ...)
 end
 
 
