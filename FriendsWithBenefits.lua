@@ -64,6 +64,8 @@ local function FinalizeAdd()
 	db.removed[currfriend] = nil
 	friendlist[currfriend] = true
 	currop, currfriend = nil
+
+	if ns.LoginSync then ns.LoginSync() end
 end
 
 
@@ -76,6 +78,8 @@ local function FinalizeRemove()
 	friendlist[currfriend] = nil
 	db.notes[currfriend] = nil
 	currop, currfriend = nil
+
+	if ns.LoginSync then ns.LoginSync() end
 end
 
 
