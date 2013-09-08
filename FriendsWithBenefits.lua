@@ -79,36 +79,30 @@ local function FinalizeRemove()
 end
 
 
-local function HandleError(err)
-	ns.Debug("Processing chat error", err, currop, currfriend)
-
-	if text == ERR_FRIEND_ERROR then return ns.Abort("An error has occured.") end
-	if currop == 'REM' then return ns.Abort("Unexpected server response.") end
-
-	if err == ERR_FRIEND_NOT_FOUND then
-		db.removed[currfriend] = true
-		db.friends[currfriend] = nil
-		if ns.FRIENDLIST_UPDATE then
-			ns.Printf("Cannot find player %q on this realm.", currfriend)
-		end
-
-	elseif err == ERR_FRIEND_WRONG_FACTION then
-		db.removed[currfriend] = true
-		db.friends[currfriend] = nil
-		if ns.FRIENDLIST_UPDATE then
-			ns.Printf("Player %q is the wrong faction.", currfriend)
-		end
-	end
-end
-
-
 local chat_errors = {
-	[ERR_FRIEND_ERROR] = true, -- "Unknown friend response from server."
 	[ERR_FRIEND_NOT_FOUND] = true, -- "Player not found."
 	[ERR_FRIEND_WRONG_FACTION] = true, -- "Friends must be part of your alliance."
 }
 function ns.CHAT_MSG_SYSTEM(event, text)
-	if chat_errors[text] then return HandleError(text) end
+	if not chat_errors[text] then return end
+
+	ns.Debug("Processing chat error", text, currop, currfriend)
+
+	if text == ERR_FRIEND_ERROR then return ns.Abort("An error has occured.") end
+	if currop == 'REM' then return ns.Abort("Unexpected server response.") end
+
+	if text == ERR_FRIEND_NOT_FOUND then
+		db.removed[currfriend] = true
+		db.friends[currfriend] = nil
+		ns.Printf("Cannot find player %q on this realm.", currfriend)
+		currfriend, currop = nil
+
+	elseif text == ERR_FRIEND_WRONG_FACTION then
+		db.removed[currfriend] = true
+		db.friends[currfriend] = nil
+		ns.Printf("Player %q is the wrong faction.", currfriend)
+		currfriend, currop = nil
+	end
 end
 
 
