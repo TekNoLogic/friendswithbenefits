@@ -22,38 +22,38 @@ end
 function ns.OnLogin()
 	ns.RegisterEvent("CHAT_MSG_SYSTEM")
 	ns.RegisterEvent("FRIENDLIST_UPDATE")
-	ShowFriends()
+	C_FriendList.ShowFriends()
 end
 
 
-local origAddFriend = AddFriend
-AddFriend = function(name, ...)
+local origAddFriend = C_FriendList.AddFriend
+C_FriendList.AddFriend = function(name, ...)
 	ns.Debug("Function AddFriend", name, ...)
 	currop, currfriend = "ADD", string.lower(name)
 	return origAddFriend(name, ...)
 end
 
 
-local origRemoveFriend = RemoveFriend
-RemoveFriend = function(i, ...)
-	local name = type(i) == "number" and GetFriendInfo(i) or i
+local origRemoveFriend = C_FriendList.RemoveFriend
+C_FriendList.RemoveFriend = function(i, ...)
+	local name = type(i) == "number" and C_FriendList.GetFriendInfoByIndex(i) or i
 	ns.Debug("Function RemoveFriend", name, i, ...)
 	currop, currfriend = "REM", string.lower(name)
 	return origRemoveFriend(i, ...)
 end
 
 
-local origSetFriendNotes = SetFriendNotes
-SetFriendNotes = function(i, note, ...)
+local origSetFriendNotes = C_FriendList.SetFriendNotes
+C_FriendList.SetFriendNotes = function(i, note, ...)
 	ns.Debug("Function SetFriendNotes", i, note, ...)
-	local name = type(i) == "number" and GetFriendInfo(i) or i
+	local name = type(i) == "number" and C_FriendList.GetFriendInfoByIndex(i) or i
 	db.notes[string.lower(name)] = note
 	return origSetFriendNotes(i, note, ...)
 end
 
 
 local function FinalizeAdd()
-	if not GetFriendInfo(currfriend) then return end
+	if not C_FriendList.GetFriendInfo(currfriend) then return end
 
 	ns.Debug("Friend added", currfriend)
 	db.friends[currfriend] = true
@@ -66,7 +66,7 @@ end
 
 
 local function FinalizeRemove()
-	if GetFriendInfo(currfriend) then return end
+	if C_FriendList.GetFriendInfo(currfriend) then return end
 
 	ns.Debug("Friend removed", currfriend)
 	db.removed[currfriend] = true
@@ -130,7 +130,7 @@ function ns.LoginSync()
 		if name then
 			AnnounceOnce()
 			ns.Debug("Removing friend due to sync", name)
-			return RemoveFriend(name)
+			return C_FriendList.RemoveFriend(name)
 		end
 	end
 
@@ -139,7 +139,7 @@ function ns.LoginSync()
 		if name then
 			AnnounceOnce()
 			ns.Debug("Adding friend due to sync", name)
-			return AddFriend(name)
+			return C_FriendList.AddFriend(name)
 		end
 	end
 
@@ -151,16 +151,16 @@ end
 
 
 function ns.LoginSyncRemote()
-	for i=1,GetNumFriends() do
-		local name, _, _, _, _, _, note = GetFriendInfo(i)
-		if not name then
+	for i=1,C_FriendList.GetNumFriends() do
+		local info = C_FriendList.GetFriendInfoByIndex(i)
+		if not info.name then
 			return ns.Abort("Server returned invalid friend data")
 		else
-			name = string.lower(name)
-			friendlist[name] = note or ""
-			if db.removed[name] then
-				return name
-			else db.friends[name] = true end
+			info.name = string.lower(info.name)
+			friendlist[info.name] = info.notes or ""
+			if db.removed[info.name] then
+				return info.name
+			else db.friends[info.name] = true end
 		end
 	end
 	ns.LoginSyncRemote = nil
@@ -174,16 +174,16 @@ function ns.LoginSyncLocal()
 		end
 	end
 
-	for i=1,GetNumFriends() do
-		local name, _, _, _, _, _, note = GetFriendInfo(i)
-		if not name then
+	for i=1,C_FriendList.GetNumFriends() do
+		local info = C_FriendList.GetFriendInfoByIndex(i)
+		if not info.name then
 			return ns.Abort("Server returned invalid friend data")
 		else
-			name = string.lower(name)
-			if db.notes[name] and db.notes[name] ~= note then
-				SetFriendNotes(name, db.notes[name])
-			elseif note ~= "" then
-				db.notes[name] = note
+			info.name = string.lower(info.name)
+			if db.notes[info.name] and db.notes[info.name] ~= info.notes then
+				C_FriendList.SetFriendNotes(info.name, db.notes[info.name])
+			elseif info.notes ~= "" then
+				db.notes[info.name] = info.notes
 			end
 		end
 	end
