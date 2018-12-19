@@ -36,20 +36,21 @@ end
 
 local origRemoveFriend = C_FriendList.RemoveFriend
 C_FriendList.RemoveFriend = function(i, ...)
-	local name = type(i) == "number" and C_FriendList.GetFriendInfoByIndex(i) or i
+	local name = type(i) == "number" and C_FriendList.GetFriendInfoByIndex(i).name or i
 	ns.Debug("Function RemoveFriend", name, i, ...)
 	currop, currfriend = "REM", string.lower(name)
-	return origRemoveFriend(i, ...)
+	return origRemoveFriend(name, ...)
 end
-
+C_FriendList.RemoveFriendByIndex = C_FriendList.RemoveFriend
 
 local origSetFriendNotes = C_FriendList.SetFriendNotes
 C_FriendList.SetFriendNotes = function(i, note, ...)
 	ns.Debug("Function SetFriendNotes", i, note, ...)
-	local name = type(i) == "number" and C_FriendList.GetFriendInfoByIndex(i) or i
+	local name = type(i) == "number" and C_FriendList.GetFriendInfoByIndex(i).name or i
 	db.notes[string.lower(name)] = note
-	return origSetFriendNotes(i, note, ...)
+	return origSetFriendNotes(name, note, ...)
 end
+C_FriendList.SetFriendNotesByIndex = C_FriendList.SetFriendNotes
 
 
 local function FinalizeAdd()
